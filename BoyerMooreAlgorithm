@@ -1,0 +1,61 @@
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+using namespace std;
+
+#define ALPHABET_SIZE 256
+
+// This function initializes and fills the bad character table.
+void createBadCharTable(const string &pattern, int size, int badCharTable[ALPHABET_SIZE]) {
+    // Initialize all occurrences to -1
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        badCharTable[i] = -1;
+    }
+
+    // Fill the actual values of last occurrence of each pattern in the table 
+    for (int i = 0; i < size; i++) {
+        badCharTable[(int)pattern[i]] = i;
+    }
+}
+
+// Apply Boyer-Moore search function using bad character heuristic
+void boyerMooreSearch(const string &text, const string &pattern) {
+    int m = pattern.size();
+    int n = text.size();
+
+    int badCharTable[ALPHABET_SIZE];
+
+    // Create the bad character table
+    createBadCharTable(pattern, m, badCharTable);
+
+    int shift = 0; // Shift of the pattern with respect to the given text 
+
+    while (shift <= (n - m)) {
+        int j = m - 1;
+
+        // Reduce index j of pattern while characters of pattern and text match at this shift
+        while (j >= 0 && pattern[j] == text[shift + j]) {
+            j--;
+        }
+
+        // If the pattern is present at current shift, then index j will become -1
+        if (j < 0) {
+            cout << "Pattern found at index: " << shift << endl;
+
+            // Shift the pattern so that the next character in text aligns with the last occurrence of it in pattern
+            shift += (shift + m < n) ? m - badCharTable[text[shift + m]] : 1;
+        } else {
+            // Shift the pattern so that the bad character in text aligns with the last occurrence of it in pattern
+            shift += max(1, j - badCharTable[text[shift + j]]);
+        }
+    }
+}
+
+// Main function to test the Boyer-Moore search implementation
+int main() {
+    string text = "AABAACAADAABAABA";
+    string pattern = "AABA";
+
+    boyerMooreSearch(text, pattern);   // Call function to search for pattern in the text 
+    return 0;
+}
