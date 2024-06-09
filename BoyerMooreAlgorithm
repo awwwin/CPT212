@@ -12,7 +12,7 @@ void createBadCharTable(const string &pattern, int size, int badCharTable[ALPHAB
         badCharTable[i] = -1;
     }
 
-    // Fill the actual values of last occurrence of each pattern in the table 
+    // Fill the actual values of last occurrence of each character in the pattern
     for (int i = 0; i < size; i++) {
         badCharTable[(int)pattern[i]] = i;
     }
@@ -20,8 +20,8 @@ void createBadCharTable(const string &pattern, int size, int badCharTable[ALPHAB
 
 // Apply Boyer-Moore search function using bad character heuristic
 void boyerMooreSearch(const string &text, const string &pattern) {
-    int m = pattern.size();
-    int n = text.size();
+    int m = pattern.size(); // Length of the pattern
+    int n = text.size(); // Length of the text 
 
     int badCharTable[ALPHABET_SIZE];
 
@@ -29,7 +29,9 @@ void boyerMooreSearch(const string &text, const string &pattern) {
     createBadCharTable(pattern, m, badCharTable);
 
     int shift = 0; // Shift of the pattern with respect to the given text 
+    bool found = false ; // Flag to check if pattern is found
 
+    // Shift the pattern over text one by one
     while (shift <= (n - m)) {
         int j = m - 1;
 
@@ -41,20 +43,35 @@ void boyerMooreSearch(const string &text, const string &pattern) {
         // If the pattern is present at current shift, then index j will become -1
         if (j < 0) {
             cout << "Pattern found at index: " << shift << endl;
+            found = true;
 
             // Shift the pattern so that the next character in text aligns with the last occurrence of it in pattern
+            // The condition shift + m < n ensures we do not access out-of-bounds characters
             shift += (shift + m < n) ? m - badCharTable[text[shift + m]] : 1;
         } else {
             // Shift the pattern so that the bad character in text aligns with the last occurrence of it in pattern
+            // We use max to ensure we get a positive shift; a negative shift can occur if the last occurrence of
+            // the bad character is to the right of the current character in the pattern
             shift += max(1, j - badCharTable[text[shift + j]]);
         }
     }
+    
+         // If no pattern was found, print the message
+        if (!found) {
+            cout << "No pattern found" << endl;
+    }  
 }
 
 // Main function to test the Boyer-Moore search implementation
 int main() {
-    string text = "AABAACAADAABAABA";
-    string pattern = "AABA";
+    string text;
+    string pattern;
+
+    // Prompt the user to enter the text and the pattern
+    cout << "Enter the text: ";
+    getline(cin, text);
+    cout << "Enter the pattern: ";
+    getline(cin, pattern);
 
     boyerMooreSearch(text, pattern);   // Call function to search for pattern in the text 
     return 0;
