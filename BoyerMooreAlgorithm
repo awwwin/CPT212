@@ -1,44 +1,93 @@
 #include <iostream>
+#include <vector>
 using namespace std;
 
 #define ALPHABET_SIZE 256
 
-// This function initializes and fills the bad character table.
+// Function to initialize and fill the bad character table.
 void createBadCharTable(const string &pattern, int size, int badCharTable[ALPHABET_SIZE]) {
     // Initialize all occurrences to -1
     for (int i = 0; i < ALPHABET_SIZE; i++) {
         badCharTable[i] = -1;
     }
 
-    // Fill the actual values of last occurrence of each character in the pattern
+    // Fill the actual values of the last occurrence of each character in the pattern
     for (int i = 0; i < size; i++) {
         badCharTable[(int)pattern[i]] = i;
     }
 }
 
-// Apply Boyer-Moore search function using bad character heuristic
+// Function to preprocess the pattern and create the good suffix table.
+void createGoodSuffixTable(const string &pattern, int m, int goodSuffixTable[]) {
+    int* borderPos = new int[m + 1];
+    int i = m, j = m + 1;
+    borderPos[i] = j;
+
+    // Preprocessing the border positions
+    while (i > 0) {
+        while (j <= m && pattern[i - 1] != pattern[j - 1]) {
+            if (goodSuffixTable[j] == 0) // Find mismatches between suffixes and prefix in the pattern
+ {
+                goodSuffixTable[j] = j - i;
+            }
+            j = borderPos[j]; // Move to the next border position based on the borderPos array 
+        }
+        i--; // Move to the next position in the pattern
+        j--; // Move back in the border position array 
+        borderPos[i] = j; // Store the calculated border position 
+    }
+
+    j = borderPos[0];
+
+// Process each position in the goodSuffixTable 
+    for (i = 0; i <= m; i++) {
+        if (goodSuffixTable[i] == 0) {
+            goodSuffixTable[i] = j;
+        }
+
+// Update j to the next value in the borderPos array
+        if (i == j) {
+            j = borderPos[j];
+        }
+    }
+
+    delete[] borderPos; // Clean up dynamically allocated memory used for borderPos array
+}
+
+// Function to search the pattern in the given text using the Boyer-Moore algorithm.
 void boyerMooreSearch(const string &text, const string &pattern) {
     int m = pattern.size(); // Length of the pattern
-    int n = text.size(); // Length of the text 
+    int n = text.size(); // Length of the text
+    
+    // Check if pattern length is greater than text length
+    if (m > n) {
+        cout << "Error: Pattern length cannot be greater than text length." << endl;
+        return;
+    }
 
     int badCharTable[ALPHABET_SIZE];
+    int* goodSuffixTable = new int[m + 1](); // Initialize with zeros
 
-    // Create the bad character table
+    // Create the bad character and good suffix tables
     createBadCharTable(pattern, m, badCharTable);
+    createGoodSuffixTable(pattern, m, goodSuffixTable);
 
-    int shift = 0; // Shift of the pattern with respect to the given text 
-    bool found = false ; // Flag to check if pattern is found
+    int shift = 0; // Shift of the pattern with respect to the given text
+    bool found = false; // Flag to check if the pattern is found
 
-    // Shift the pattern over text one by one
+
+    // Shift the pattern over the text one by one
     while (shift <= (n - m)) {
         int j = m - 1;
+
+        cout << "\nChecking alignment at position " << shift << ":" << endl;
 
         // Reduce index j of pattern while characters of pattern and text match at this shift
         while (j >= 0 && pattern[j] == text[shift + j]) {
             j--;
         }
 
-        // If the pattern is present at current shift, then index j will become -1
+        // If the pattern is present at the current shift, then index j will become -1
         if (j < 0) {
             cout << "Pattern found at index: " << shift << endl;
             found = true;
@@ -47,17 +96,27 @@ void boyerMooreSearch(const string &text, const string &pattern) {
             // The condition shift + m < n ensures we do not access out-of-bounds characters
             shift += (shift + m < n) ? m - badCharTable[text[shift + m]] : 1;
         } else {
-            // Shift the pattern so that the bad character in text aligns with the last occurrence of it in pattern
-            // We use max to ensure we get a positive shift; a negative shift can occur if the last occurrence of
-            // the bad character is to the right of the current character in the pattern
-            shift += max(1, j - badCharTable[text[shift + j]]);
+            cout << "Mismatch at position " << (shift + j) << ": " << text[shift + j] << " != " << pattern[j] << endl;
+
+            // Calculate shifts
+            int badCharShift = max(1, j - badCharTable[text[shift + j]]);
+            int goodSuffixShift = goodSuffixTable[j + 1];
+            int shiftApplied = max(badCharShift, goodSuffixShift);
+
+            cout << "Bad character shift: " << badCharShift << endl;
+            cout << "Good suffix shift: " << goodSuffixShift << endl;
+            cout << "Applying shift: " << shiftApplied << endl;
+
+            shift += shiftApplied;
         }
     }
-    
-         // If no pattern was found, print the message
-        if (!found) {
-            cout << "No pattern found" << endl;
-    }  
+
+    // If no pattern was found, print the message
+    if (!found) {
+        cout << "No pattern found" << endl;
+    }
+
+    delete[] goodSuffixTable; // Clean up dynamically allocated memory
 }
 
 // Main function to test the Boyer-Moore search implementation
@@ -71,6 +130,7 @@ int main() {
     cout << "Enter the pattern: ";
     getline(cin, pattern);
 
-    boyerMooreSearch(text, pattern);   // Call function to search for pattern in the text 
+    boyerMooreSearch(text, pattern);   // Call function to search for pattern in the text
+
     return 0;
 }
