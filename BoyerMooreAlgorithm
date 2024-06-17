@@ -7,9 +7,13 @@ using namespace std;
 // Function to initialize and fill the bad character table.
 void createBadCharTable(const string &pattern, int badCharTable[ALPHABET_SIZE]) {
     int m = pattern.size();
+
+    // Initialize all occurrences to -1
     for (int i = 0; i < ALPHABET_SIZE; i++) {
         badCharTable[i] = -1;
     }
+
+    // Fill the actual values of last occurrence of each character in the pattern
     for (int i = 0; i < m; i++) {
         badCharTable[(int)pattern[i]] = i;
     }
@@ -17,29 +21,31 @@ void createBadCharTable(const string &pattern, int badCharTable[ALPHABET_SIZE]) 
 
 // Function to preprocess the pattern and create the good suffix tables.
 void createGoodSuffixTable(const string &pattern, vector<int> &borderPosition, vector<int> &shiftTable) {
-    int m = pattern.size();
-    int i = m, j = m + 1;
-    borderPosition[i] = j;
+    int m = pattern.size(); // Length of the pattern
+    int i = m, j = m + 1;   // Initialize indices for borderPosition and shiftTable
+    borderPosition[i] = j;  // Set the border position for the end of the pattern
 
     while (i > 0) {
+        // Find the largest border of the suffix starting at position i that matches a prefix
         while (j <= m && pattern[i - 1] != pattern[j - 1]) {
             if (shiftTable[j] == 0) {
-                shiftTable[j] = j - i;
+                shiftTable[j] = j - i; // Set the shift table value
             }
-            j = borderPosition[j];
+            j = borderPosition[j]; // Update j to the next border position
         }
-        i--;
-        j--;
-        borderPosition[i] = j;
+        i--; // Move to the next position in the pattern
+        j--; // Move to the next border position
+        borderPosition[i] = j; // Set the border position for the current suffix
     }
 
-    j = borderPosition[0];
+    j = borderPosition[0]; // Start with the border position of the entire pattern
+    // Process the shift table from left to right
     for (i = 0; i <= m; i++) {
         if (shiftTable[i] == 0) {
-            shiftTable[i] = j;
+            shiftTable[i] = j; // Set the shift table value
         }
         if (i == j) {
-            j = borderPosition[j];
+            j = borderPosition[j]; // Update j to the next border position
         }
     }
 }
@@ -49,9 +55,9 @@ void boyerMooreSearch(const string &text, const string &pattern) {
     int m = pattern.size();
     int n = text.size();
 
-    int badCharTable[ALPHABET_SIZE];
-    vector<int> borderPosition(m + 1);
-    vector<int> shiftTable(m + 1, 0);
+    int badCharTable[ALPHABET_SIZE]; // Bad character table
+    vector<int> borderPosition(m + 1); // Border position table
+    vector<int> shiftTable(m + 1, 0);  // Shift table
 
     // Create the bad character table.
     createBadCharTable(pattern, badCharTable);
@@ -59,13 +65,14 @@ void boyerMooreSearch(const string &text, const string &pattern) {
     // Create the good suffix table.
     createGoodSuffixTable(pattern, borderPosition, shiftTable);
 
-    int shift = 0;
-    bool found = false;
+    int shift = 0; // Initialize the shift variable to track the current position in the text
+    bool found = false; // Initialize a flag to indicate whether the pattern has been found
 
+    // Loop through the text until the remaining characters are fewer than the pattern length
     while (shift <= (n - m)) {
-        int j = m - 1;
+        int j = m - 1; // Start comparing from the last character of the pattern
 
-        // Reduce index j of pattern while characters of pattern and text match at this shift.
+        // Reduce index j of pattern while characters of pattern and text match at this shift
         while (j >= 0 && pattern[j] == text[shift + j]) {
             j--;
         }
