@@ -2,7 +2,7 @@
 #include <vector>
 using namespace std;
 
-#define ALPHABET_SIZE 256
+#define ALPHABET_SIZE 256 // Define the size of the alphabet (ASCII characters)
 
 // Function to initialize and fill the bad character table.
 void createBadCharTable(const string &pattern, int badCharTable[ALPHABET_SIZE]) {
